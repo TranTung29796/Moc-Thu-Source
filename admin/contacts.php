@@ -1,0 +1,11 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/../includes/auth.php';
+require_admin();
+if (is_post()) { verify_csrf(); $status = in_array($_POST['status'] ?? '', ['new','read','replied'], true) ? $_POST['status'] : 'read'; db()->prepare('UPDATE contacts SET status = ? WHERE id = ?')->execute([$status, (int) $_POST['id']]); flash('success', 'Đã cập nhật trạng thái liên hệ.'); redirect('admin/contacts.php'); }
+$contacts = db()->query('SELECT * FROM contacts ORDER BY created_at DESC')->fetchAll();
+$pageTitle = 'Quản lý liên hệ'; require __DIR__ . '/../includes/header.php';
+?>
+<section class="admin-page"><div class="container"><div class="admin-heading"><div><p class="eyebrow">Hộp thư</p><h1>Liên hệ khách hàng</h1></div></div><nav class="admin-tabs"><a href="<?= url('admin/index.php') ?>">Tổng quan</a><a href="<?= url('admin/books.php') ?>">Quản lý sách</a><a class="active" href="<?= url('admin/contacts.php') ?>">Liên hệ</a></nav><section class="admin-panel"><div class="table-responsive"><table class="table admin-table"><thead><tr><th>Khách hàng</th><th>Chủ đề</th><th>Nội dung</th><th>Ngày gửi</th><th>Trạng thái</th></tr></thead><tbody><?php if (!$contacts): ?><tr><td colspan="5" class="text-center py-5">Chưa có liên hệ nào.</td></tr><?php endif; ?><?php foreach ($contacts as $item): ?><tr><td><strong><?= e($item['full_name']) ?></strong><small><?= e($item['email']) ?><br><?= e($item['phone']) ?></small></td><td><?= e($item['subject']) ?></td><td class="message-cell"><?= e($item['message']) ?></td><td><?= date('d.m.Y H:i', strtotime($item['created_at'])) ?></td><td><form method="post" class="status-form"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $item['id'] ?>"><select class="form-select form-select-sm" name="status" onchange="this.form.submit()"><option value="new" <?= $item['status']==='new'?'selected':'' ?>>Mới</option><option value="read" <?= $item['status']==='read'?'selected':'' ?>>Đã đọc</option><option value="replied" <?= $item['status']==='replied'?'selected':'' ?>>Đã trả lời</option></select></form></td></tr><?php endforeach; ?></tbody></table></div></section></div></section>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
+

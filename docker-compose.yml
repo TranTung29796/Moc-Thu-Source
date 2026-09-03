@@ -1,0 +1,37 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: bookstore
+      DB_USER: bookuser
+      DB_PASSWORD: bookpass
+    volumes:
+      - ./:/var/www/html
+      - book_uploads:/var/www/html/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: bookstore
+      MYSQL_USER: bookuser
+      MYSQL_PASSWORD: bookpass
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - book_mysql:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  book_mysql:
+  book_uploads:
